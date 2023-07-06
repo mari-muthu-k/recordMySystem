@@ -5,6 +5,7 @@ import (
 	"log"
 
 	battery "github.com/distatus/battery"
+	"github.com/google/uuid"
 	cpu "github.com/shirou/gopsutil/v3/cpu"
 	host "github.com/shirou/gopsutil/v3/host"
 	mem "github.com/shirou/gopsutil/v3/mem"
@@ -12,6 +13,8 @@ import (
 
 func GetSystemInfo()SystemInfo{
 	var sysInfo SystemInfo
+	uuidObj :=  uuid.New()
+	sysInfo.Id       = uuidObj.String()
 	sysInfo.HostName = GetHostName()
 	sysInfo.BatteryPercentage = GetBatteryPercentage()
 	sysInfo.MemoryUsage = GetMemoryUsage()

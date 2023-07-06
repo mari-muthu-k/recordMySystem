@@ -1,6 +1,7 @@
 package systeminfo
 
 type SystemInfo struct {
+	Id                string    `json:"id"`
 	HostName          string    `json:"hostName"`
 	BatteryPercentage float64   `json:"batteryPercentage"`
 	MemoryUsage       float64   `json:"memoryUsage"`
