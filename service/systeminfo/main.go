@@ -5,7 +5,6 @@ import (
 	"log"
 
 	battery "github.com/distatus/battery"
-	"github.com/google/uuid"
 	cpu "github.com/shirou/gopsutil/v3/cpu"
 	host "github.com/shirou/gopsutil/v3/host"
 	mem "github.com/shirou/gopsutil/v3/mem"
@@ -13,9 +12,7 @@ import (
 
 func GetSystemInfo()SystemInfo{
 	var sysInfo SystemInfo
-	uuidObj :=  uuid.New()
-	sysInfo.Id       = uuidObj.String()
-	sysInfo.HostName = GetHostName()
+	sysInfo.Id,sysInfo.HostName = GetHostIdAndName()
 	sysInfo.BatteryPercentage = GetBatteryPercentage()
 	sysInfo.MemoryUsage = GetMemoryUsage()
 	sysInfo.Temperature = GetAvgTemperature()
@@ -23,12 +20,13 @@ func GetSystemInfo()SystemInfo{
 	return sysInfo
 }
 
-func GetHostName()string{
+func GetHostIdAndName()(string,string){
 	hostInfo,err := host.InfoWithContext(context.Background())
 	if err != nil {
 		log.Fatalf("unable to read host name info : ",err)
 	}
-	return hostInfo.Hostname
+	
+	return hostInfo.HostID,hostInfo.Hostname
 }
 
 func GetBatteryPercentage()float64{
