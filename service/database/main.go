@@ -49,23 +49,30 @@ func QueryData(fields []string,startTime string,endTime string,id string,sysData
 	}
 
 	for results.Next() {
+		var tArr []interface{}
 		record := results.Record()
 		val := record.Value()
         if !isDataExist || val != nil {
 			isDataExist = true
 		}
 
+		tArr = append(tArr,record.Time())
+		if record.Field() != "hostName" {
+			tArr = append(tArr, val.(float64))
+		}
+
 		switch record.Field() {
 		case "cpuPercentage":
-			sysData.CpuPercentage = append(sysData.CpuPercentage, val.(float64))
+			sysData.CpuPercentage = append(sysData.CpuPercentage,tArr)
 		case "temperature":
-			sysData.Temperature = append(sysData.Temperature, val.(float64))
+			sysData.Temperature = append(sysData.Temperature,tArr)
 		case "memoryUsage":
-			sysData.MemoryUsage = append(sysData.MemoryUsage, val.(float64))
+			sysData.MemoryUsage = append(sysData.MemoryUsage,tArr)
 		case "batteryPercentage":
-			sysData.BatteryPercentage = append(sysData.BatteryPercentage, val.(float64))
+			sysData.BatteryPercentage = append(sysData.BatteryPercentage,tArr)
 		case "hostName":
-			sysData.HostName = append(sysData.HostName, val.(string))
+			tArr = append(tArr,val.(string))
+			sysData.HostName = append(sysData.HostName,tArr)
 		}
 	}
 	
@@ -106,6 +113,6 @@ func BuildQuery(fields []string,startTime string,endTime string,id string)string
 	}
 
 	query += fmt.Sprintf(`|> filter(fn:(r)=> r["id"]=="%s")
-	                      |> keep(columns:["_field","_value"])`,id)
+	                      |> keep(columns:["_field","_value","_time"])`,id)
 	return query
 }
