@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -36,4 +37,55 @@ func InsertData(sysData *systeminfo.SystemInfo)(bool,error){
 	}
 
 	return true,nil
+}
+
+func QueryData(fields []string,startTime string,endTime string,id string,sysData *systeminfo.GetSystemInfoData)(bool,error){
+	var isDataExist bool
+	query := BuildQuery(fields,startTime,endTime,id)
+	results, err := server.InfluxQueryAPI.Query(context.Background(), query)
+	if err != nil {
+		return isDataExist,err
+	}
+
+	for results.Next() {
+		record := results.Record()
+		val := record.Value()
+        if !isDataExist || val != nil {
+			isDataExist = true
+		}
+
+		switch record.Field() {
+		case "cpuPercentage":
+			sysData.CpuPercentage = append(sysData.CpuPercentage, val.(float64))
+		case "temperature":
+			sysData.Temperature = append(sysData.Temperature, val.(float64))
+		case "memoryUsage":
+			sysData.MemoryUsage = append(sysData.MemoryUsage, val.(float64))
+		case "batteryPercentage":
+			sysData.BatteryPercentage = append(sysData.BatteryPercentage, val.(float64))
+		case "hostName":
+			sysData.HostName = append(sysData.HostName, val.(string))
+		}
+	}
+	
+	if err := results.Err(); err != nil {
+		return isDataExist,err
+	}
+
+	return isDataExist,nil
+}
+
+func BuildQuery(fields []string,startTime string,endTime string,id string)string{
+	query := fmt.Sprintf(
+		      `from(bucket: "%s")
+			  |> range(start:%s,stop:%s)
+			  |> filter(fn: (r) => r["_measurement"] == "%s")`,server.BUCKET,startTime,endTime,server.MEASUREMENT)
+
+	for _,field := range fields {
+		    query += fmt.Sprintf(`|> filter(fn: (r)=> r["_field"]=="%s")`,field)
+	}
+
+	query += fmt.Sprintf(`|> filter(fn:(r)=> r["id"]=="%s")
+	                      |> keep(columns:["_field","_value"])`,id)
+	return query
 }
