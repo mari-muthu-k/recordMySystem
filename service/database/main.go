@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -76,10 +77,29 @@ func QueryData(fields []string,startTime string,endTime string,id string,sysData
 }
 
 func BuildQuery(fields []string,startTime string,endTime string,id string)string{
+	sTime,err := strconv.Atoi(startTime)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+
+	eTime,err := strconv.Atoi(endTime)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+
+	// Convert Unix timestamp to time.Time
+	st := time.Unix(0,  int64(sTime)*int64(time.Millisecond))
+	et := time.Unix(0,  int64(eTime)*int64(time.Millisecond))
+
+	sISO := st.UTC().Format("2006-01-02T15:04:05.999Z")
+	eISO := et.UTC().Format("2006-01-02T15:04:05.999Z")
+
 	query := fmt.Sprintf(
 		      `from(bucket: "%s")
 			  |> range(start:%s,stop:%s)
-			  |> filter(fn: (r) => r["_measurement"] == "%s")`,server.BUCKET,startTime,endTime,server.MEASUREMENT)
+			  |> filter(fn: (r) => r["_measurement"] == "%s")`,server.BUCKET,sISO,eISO,server.MEASUREMENT)
 
 	for _,field := range fields {
 		    query += fmt.Sprintf(`|> filter(fn: (r)=> r["_field"]=="%s")`,field)
